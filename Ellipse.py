@@ -1,4 +1,7 @@
 import numpy as np
+from collections import namedtuple
+
+Point = namedtuple('Point', ['x', 'y'])
 
 class Ellipse:
     def __init__(self, a, b, cx=0, cy=0, weight=1):
@@ -67,4 +70,4 @@ class Ellipse:
         x1 = y1 * aa + bb
         x2 = y2 * aa + bb
 
-        return [(x1 + self.cx, y1 + self.cy), (x2 + self.cx, y2 + self.cy)]
+        return [Point(x1 + self.cx, y1 + self.cy), Point(x2 + self.cx, y2 + self.cy)]

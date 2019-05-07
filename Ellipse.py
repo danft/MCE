@@ -49,25 +49,31 @@ class Ellipse:
         :type e2: Ellipse
         """
 
-        if self.a != e2.a:
+        if self.a != e2.a or self.b != e2.b:
             raise Exception("ERROR: For now, the ellipses have to be equal and parallel to the axis.")
 
         h = e2.cx - self.cx
         k = e2.cy - self.cy
         a = self.a
-        b = e2.b
+        b = self.b
 
-        aa = (-2*k*a**2) / (2*h*b**2)
-        bb = (b**2*h**2 + a**2*k**2) / (2*h*b**2)
+        al = (-2*k*a**2) / (2*h*b**2)
+        be = (b**2*h**2 + a**2*k**2) / (2*h*b**2)
 
-        ro = np.roots([b**2*aa**2+a**2, 2*bb*aa*b**2, b**2*bb**2 - a**2*b**2])
+        ea = b**2*al**2+a**2
+        eb = 2*be*al*b**2
+        ec = b**2*be**2 - a**2*b**2
+
+        ro = np.roots([ea, eb, ec])
 
         if np.iscomplex(ro[0]):
             return None
 
         y1, y2 = ro
+        #print("{}, {}".format(y1, y2))
 
-        x1 = y1 * aa + bb
-        x2 = y2 * aa + bb
+        x1 = y1 * al + be
+        x2 = y2 * al + be
 
+        return [Point(x1, y1), Point(x2, y2)]
         return [Point(x1 + self.cx, y1 + self.cy), Point(x2 + self.cx, y2 + self.cy)]

@@ -1,6 +1,7 @@
 from Ellipse import *
 import numpy as np
 
+
 class Cover:
     def __init__(self, cov: set, p: Point):
         self.cov = cov
@@ -24,7 +25,7 @@ def MCE1(X, Y, e: Ellipse):
         zret.append(Cover({i}, (X[i], Y[i])))
 
         for j in range(n):
-            if (i == j):
+            if i == j:
                 continue
 
             a1, a2 = el[i].interangles(el[j])
@@ -88,8 +89,9 @@ class _MCE:
             self.f(j+1)
             self.cover.discard(op.cov)
 
+
 def MCE(X, Y, E):
-    _mc = _MCE(X,Y,E)
+    _mc = _MCE(X, Y, E)
     _mc.f(0)
 
     return _mc.fopt, _mc.opt

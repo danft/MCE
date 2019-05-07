@@ -15,6 +15,7 @@ class Ellipse:
 
     def fx(self, t):
         return self.a * np.cos(t)
+
     def fy(self, t):
         return self.b * np.sin(t)
 
@@ -29,7 +30,7 @@ class Ellipse:
     def interangles(self, e2):
         ret = self.inter(e2)
 
-        if ret == None:
+        if ret is None:
             return None
 
         s1 = self.angle(ret[0])
@@ -57,8 +58,10 @@ class Ellipse:
         a = self.a
         b = self.b
 
-        al = (-2*k*a**2) / (2*h*b**2)
-        be = (b**2*h**2 + a**2*k**2) / (2*h*b**2)
+        d = 2 * h * b**2
+
+        al = (-2*k*a**2) / d
+        be = (b**2*h**2 + a**2*k**2) / d
 
         ea = b**2*al**2+a**2
         eb = 2*be*al*b**2

@@ -16,6 +16,7 @@ def plot_mce_instance(X,Y,E):
 
     plt.show()
 
+
 def plot_ellipse_inter(E:list):
     fig, ax = plt.subplots(subplot_kw={'aspect':'equal', 'xlim':[-2,2], 'ylim':[-2,2]})
 
@@ -27,7 +28,7 @@ def plot_ellipse_inter(E:list):
     for i in range(m):
         for j in range(i+1,m):
             r = E[i].inter(E[j])
-            if r == None:
+            if r is None:
                 continue
 
             print(r)

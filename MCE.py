@@ -1,14 +1,17 @@
 from Ellipse import *
+from typing import Tuple, Set, List, Dict
 import numpy as np
 
-
 class Cover:
-    def __init__(self, cov: set, p: Point):
-        self.cov = cov
-        self.p = p
+    def __init__(self, cov: Set, p: Point):
+        self.cov:Set = cov
+        self.p:Point = p
+
+    def __repr__(self):
+        return 'Cov: {}\n{}'.format(self.cov, self.p)
 
 
-def MCE1(X, Y, e: Ellipse):
+def MCE1(X, Y, e: Ellipse) -> List[Cover]:
     """
     :param X: X coordinates of points
     :param Y: Y coordinates of points
@@ -22,13 +25,17 @@ def MCE1(X, Y, e: Ellipse):
 
     for i in range(n):
         actset = []
-        zret.append(Cover({i}, (X[i], Y[i])))
+        zret.append(Cover({i}, Point(X[i]-e.a/2, Y[i]-e.b/2)))
 
         for j in range(n):
             if i == j:
                 continue
 
-            a1, a2 = el[i].interangles(el[j])
+            rr = el[i].interangles(el[j])
+            if rr is None:
+                continue
+
+            a1, a2 = rr
             actset.append((a1, j, 1))
             actset.append((a2, j, -1))
 
@@ -40,7 +47,7 @@ def MCE1(X, Y, e: Ellipse):
         for tmp in range(2):
             for (a, ix, o) in actset:
                 if o == -1:
-                    zret.append(Cover(covered.copy(), (el[j].fx(a), el[j].fy(a))))
+                    zret.append(Cover(covered.copy(), Point(el[i].fx(a), el[i].fy(a))))
                     covered.discard(ix)
                 else:
                     Cnt += 1
@@ -51,7 +58,7 @@ def MCE1(X, Y, e: Ellipse):
 
 class _MCE:
 
-    def __init__(self, X, Y, E):
+    def __init__(self, X, Y, E:Ellipse):
         """
         Does the backtracking
         :param X: The x-coord of the point set
@@ -68,14 +75,14 @@ class _MCE:
         self.opt = dict()
 
         # The number of points covered in the optimal solution
-        self.fopt = 0
+        self.fopt:float = 0
 
         # the set of points covered currently
         self.cover = set()
 
         self.Zs = [MCE1(X, Y, E[i]) for i in range(self.m)]
 
-    def f(self, j):
+    def f(self, j:int):
         if j == self.m:
             if len(self.cover) > self.fopt:
                 self.opt = self.sol.copy()
@@ -89,9 +96,8 @@ class _MCE:
             self.f(j+1)
             self.cover.discard(op.cov)
 
-
-def MCE(X, Y, E):
-    _mc = _MCE(X, Y, E)
+def MCE(X, Y, E) -> Tuple[float, Dict]:
+    _mc = _MCE(X,Y,E)
     _mc.f(0)
 
     return _mc.fopt, _mc.opt

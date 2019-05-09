@@ -16,9 +16,9 @@ xs = [-0.1, 1, 2]
 ys = [0, 1.4, 0]
 
 #plot_max_clique_instance(xs,ys,E1)
-plot_ellipse_candidate_list(xs, ys, E1)
+#plot_ellipse_candidate_list(xs, ys, E1)
 
-#print(MCE(xs, ys, [E1]))
+print(MCE(xs, ys, [E1]))
 
 #plot_mce_instance(xs, ys, [E1])
 #plot_ellipse_inter([E1, E2])

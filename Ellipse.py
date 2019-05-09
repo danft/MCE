@@ -45,9 +45,9 @@ class Ellipse:
         t2 = self.angle(ret[1])
 
         if np.cross([self.dfx(s1), self.dfy(s1)], [-e2.dfx(t1), -e2.dfy(t1)]) >= 0:
-            return s1, s2
+            return s2, s1
 
-        return s2,s1
+        return s1,s2
 
     def inter(self, e2:Ellipse) -> Optional[List[Point,Point]]:
         """

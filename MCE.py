@@ -22,10 +22,15 @@ def MCE1(X, Y, e: Ellipse) -> List[Cover]:
 
     el = [Ellipse(e.a, e.b, X[i], Y[i]) for i in range(n)]
     zret = []
+    seen = set()
 
     for i in range(n):
         actset = []
-        zret.append(Cover({i}, Point(X[i]-e.a/2, Y[i]-e.b/2)))
+
+        if tuple([i]) not in seen:
+            zret.append(Cover({i}, Point(X[i]-e.a/2, Y[i]-e.b/2)))
+            seen.add(tuple([i]))
+
 
         for j in range(n):
             if i == j:
@@ -36,10 +41,15 @@ def MCE1(X, Y, e: Ellipse) -> List[Cover]:
                 continue
 
             a1, a2 = rr
+            #print("ang: {}-{}: {} {}".format(i, j, a1, a2))
             actset.append((a1, j, 1))
             actset.append((a2, j, -1))
 
         actset.sort()
+
+        #print("ACSET:{}".format(i))
+        #print(actset)
+
         covered = {i}
 
         Cnt = 0
@@ -47,13 +57,25 @@ def MCE1(X, Y, e: Ellipse) -> List[Cover]:
         for tmp in range(2):
             for (a, ix, o) in actset:
                 if o == -1:
-                    zret.append(Cover(covered.copy(), Point(el[i].fx(a), el[i].fy(a))))
+
+                    if (ix not in covered):
+                        continue
+
+                    cvlist = list(covered)
+                    cvlist.sort()
+
+                    if (not tuple(cvlist) in seen):
+                        #print("CVLIST:{} {}: {},{}".format(i,ix,el[i].fx(a), el[i].fy(a)))
+                        #print(cvlist)
+                        zret.append(Cover(covered.copy(), Point(el[i].fx(a), el[i].fy(a))))
+                        seen.add(tuple(cvlist))
+
                     covered.discard(ix)
                 else:
                     Cnt += 1
                     covered.add(ix)
 
-        return zret
+    return zret
 
 
 class _MCE:

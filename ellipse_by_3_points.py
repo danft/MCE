@@ -1,54 +1,137 @@
 from Ellipse import *
-from math import asin, atan, acos, atan2, sqrt, cos, sin, pi
-
-def eq(x:float, y:float):
-    return abs(x-y) < 1e-5
-
-def ellipse_by_3_points(p1:Point, p2:Point, p3:Point, e:Ellipse)->Ellipse:
-    p2 = Point(p2.x-p1.x, p2.y-p1.y)
-    p3 = Point(p3.x-p1.x, p3.y-p1.y)
-
-    den = (p3.y) * (p3.x-p2.x) - (p3.y-p2.y) * (p3.x)
-    if (den == 0):
-        raise Exception("The points cannot be colinear")
-
-    q = e.a**2/e.b**2
-
-    Det = (p3.x)*(p3.x-p2.x) + q * (p3.y)*(p3.y-p2.y)
-    Det /= den
-
-    A = (q**2 + Det**2)*p2.x**2 + q**2*(Det**2 + 1)*p2.y**2 + 2 * Det * (q - q**2)*p2.x*p2.y
-    C = (q**2 + Det**2)*p2.y**2 + q**2*(Det**2 + 1)*p2.x**2 - 2 * Det * (q - q**2)*p2.x*p2.y
-    B = Det*(q-q**2)*(p2.x**2 - p2.y**2) - (q**2 + Det**2)*p2.x*p2.y + q**2 * (Det**2+1)*p2.x*p2.y
-    D = 4 * q**2 * e.a ** 2
+from math import asin, atan, acos, atan2, sqrt, cos, sin, pi, tan, fabs
 
 
-    Ah = (A-C)/2
-    Bh = B
-    Ch = (A+C-2*D)/2
-
-    theta = None
-
-    if (eq(Ah,0) and eq(Bh,0)):
-        theta = pi/2
-    elif (eq(Ah,0)):
-        theta = .5 * asin(-Ch / Bh)
-    elif (eq(Bh, 0)):
-        theta = .5 * acos(-Ch / Ah)
-    else:
-        theta = .5*atan((-sqrt(Ah**2 * Bh**2 + Bh**4 - Bh**2*Ch**2) - Ah*Ch)/ (Ah**2+Bh**2))
-
-    #theta = atan((sqrt(Ah**2 * Bh**2 + Bh**4 - Bh**2*Ch**2) - Ah*Ch)/ (Ah**2+Bh**2))
-
-    gamma = p2.x * cos(theta) - p2.y * sin(theta)
-    delta = p2.x * sin(theta) + p2.y * cos(theta)
-
-    cx = (gamma - Det * delta)/2
-    cy = (q * delta + Det * gamma)/(2*q)
-
-    print(cx, cy, theta)
-
-    return e
+def eq(x: float, y: float):
+    return abs(x - y) < 1e-5
 
 
-ellipse_by_3_points(Point(0,0), Point(3, 2), Point(6,0), Ellipse(3, 2))
+def ellipse_by_3_points(h: float, l: float, m: float, e: Ellipse, return_conic_equation = False) -> list:
+    """
+    For now it returns five parameters of the conic equation A,B,C,D,E
+    Assumes that the three points are in the following order:
+    p1p2 is the longest segment
+    p1 is (0,0)
+    p2 is (h, 0)
+    p3 is (lh, lhm)
+    :return: Five parameters of a conic with the same shape as the ellipse passed as parameter.
+    """
+
+    if l - 1e-9 < 0:
+        raise Exception("The parameter `l` must be positive.")
+
+    if m - 1e-9 < 0:
+        raise Exception("The parameter `m` must be positive.")
+
+    a = e.a
+    b = e.b
+    w = (a ** 2 - b ** 2) / (a ** 2 + b ** 2)
+
+    # simple function that returns the conic equation given an angle of rotation
+    def geteq(theta):
+        t = tan(2 * theta)
+
+        A = (-w + sqrt(t ** 2 + 1)) / (2 * t * w)
+        B = -1
+        C = A + 1 / t
+        beta = (A * (1 - l) + l * m - C * m ** 2 * l) / m
+
+        H = (4 * A * C - B ** 2) * (A + C - sqrt((A - C) ** 2 + B ** 2))
+        h = (a ** 2 * H) / (2 * (A * beta ** 2 - A * beta + C * A ** 2))
+        D = -A * h
+        E = h * beta
+
+        return A, B, C, D, E, 0
+
+
+    # first lets define a function that returns the squared legnth of the triangle which is simillar to the one formed
+    # by the points given and is inscribed in the ellipse rotated by an angle of theta, 0 < theta < pi/4
+    def g(theta):
+        if theta < 0 or theta > pi / 4:
+            raise Exception("Angle of rotation is invalid.")
+
+        t = tan(2 * theta)
+
+        A = (-w + sqrt(t ** 2 + 1)) / (2 * t * w)
+        B = -1
+        C = A + 1 / t
+        beta = (A * (1 - l) + l * m - C * m ** 2 * l) / m
+
+        H = (4 * A * C - B ** 2) * (A + C - sqrt((A - C) ** 2 + B ** 2))
+
+        return (a ** 2 * H) / (2 * (A * beta ** 2 - A * beta + C * A ** 2))
+
+    tmax = ternary_search(g, 0, pi / 4)
+    hmax = g(tmax)
+
+    # If the maximum of the function is less than we are looking for we wont find any solution.
+    if hmax < h ** 2:
+        return []
+
+    s1 = bissec(g, 0, tmax, h*h)
+    hs1 = sqrt(g(s1))
+    s2 = bissec(lambda theta: -g(theta), tmax, pi/4, -h*h)
+    hs2 = sqrt(g(s2))
+
+    print(f"s1: {s1} -> {sqrt(g(s1))}")
+    print(f"s2: {s2} -> {sqrt(g(s2))}")
+
+    Sols = []
+    ss = [s1, s2]
+
+    for s in ss:
+        hs = sqrt(g(s))
+        if (fabs(hs - h) < 1e-6):
+            Sols.push(geteq(s))
+
+    return Sols
+
+
+
+    print(sqrt(g(tmax)))
+    return tmax
+
+
+def bissec(f, l, r, x):
+    """
+    Assumes that f is increasing
+    :param f: the function
+    :param l: defines the search interval.
+    :param r: defines the search interval.
+    :param x: the value to be found.
+    :return: the point which most approximates x.
+    """
+
+    ans = (l+r)/2
+    while (r-l > 1e-15):
+        mi = (l+r)/2
+        ans = mi
+        if f(mi) < x:
+            l = mi
+        else:
+            r = mi
+
+    return ans
+
+
+def ternary_search(f, l, r):
+    """
+    Finds the maximum of function f using a ternary search.
+    :param f: the function to be maximized, f is unimodal.
+    :param l: defines the interval to search.
+    :param r: defines the interval to search.
+    :return: the point which maximizes the function f.
+    """
+    ans = (l + r) / 2
+
+    while r - l > 1e-9:
+        m1 = l + (r - l) / 3
+        m2 = r - (r - l) / 3
+        ans = (m1 + m2) / 2
+
+        if f(m1) < f(m2):
+            l = m1
+        else:
+            r = m2
+
+    return ans

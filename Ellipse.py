@@ -3,8 +3,15 @@ import numpy as np
 import matplotlib as mp
 from collections import namedtuple
 from typing import Optional, List, Tuple
+from math import sqrt, sin, cos
 
 Point = namedtuple('Point', ['x', 'y'])
+
+def dist(p:Point, q:Point):
+    return sqrt((p.x-q.x)**2 + (p.y-q.y)**2)
+
+def rotate(p:Point, ang:float)->Point:
+    return Point(p.x * cos(ang) - p.y * sin(ang), p.x * sin(ang) + p.y*cos(ang))
 
 class Ellipse:
     def __init__(self, a:float, b:float, cx=0, cy=0, weight=1):
@@ -13,6 +20,7 @@ class Ellipse:
         self.cx:float = cx
         self.cy:float = cy
         self.weight:float = weight
+        self.rotangle:float=0
         self.dfx = lambda t: -self.a * np.cos(t)
         self.dfy = lambda t: self.b * np.sin(t)
 

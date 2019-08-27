@@ -1,6 +1,7 @@
 # contains some utility functions
 
-def bissec(f, l, r, x):
+
+def bissecInc(f, l, r, x):
     """
     Assumes that f is increasing
     :param f: the function
@@ -11,7 +12,7 @@ def bissec(f, l, r, x):
     """
 
     ans = (l+r)/2
-    while (r-l > 1e-15):
+    while r-l > 1e-9:
         mi = (l+r)/2
         ans = mi
         if f(mi) < x:
@@ -22,7 +23,7 @@ def bissec(f, l, r, x):
     return ans
 
 
-def ternary_search(f, l, r):
+def findMax(f, l, r):
     """
     Finds the maximum of function f using a ternary search.
     :param f: the function to be maximized, f is unimodal.
@@ -43,3 +44,16 @@ def ternary_search(f, l, r):
             r = m2
 
     return ans
+
+def findMin(f, l, r):
+    return findMax(lambda theta: -f(theta), l, r)
+
+def bissecDec(f, l, r, x):
+    return bissecInc(lambda theta: -f(theta), l, r, -x)
+
+def isInc(f, x):
+    """
+    Returns True if the function is increasing
+    """
+    eps = 1e-9
+    return f(x + eps) > f(x)

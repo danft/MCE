@@ -37,8 +37,7 @@ class Helper:
 
         x, y = self.ctx.p[2].x, self.ctx.p[2].y
 
-        return ((x - xc) * cos(theta) + (y - yc) * sin(theta)) ** 2 / self.ctx.a ** 2 + (
-                (x - xc) * sin(theta) - (y - yc) * cos(theta)) ** 2 / self.ctx.b ** 2
+        return (((x - xc) * cos(theta) + (y - yc) * sin(theta)) / self.ctx.a) ** 2 + (((x - xc) * sin(theta) - (y - yc) * cos(theta)) / self.ctx.b) ** 2
 
 
 def get_upper_limit(ctx: Context):
@@ -54,8 +53,8 @@ def get_upper_limit(ctx: Context):
 
     # print((D/4-b**2)/(a*a-b*b), "bla")
 
-    t1 = acos(sqrt((D / 4 - b ** 2) / (a * a - b * b)))
-    if t1 < 1e-15:
+    t1 = acos(sqrt((D - 4 * b * b) / (4 * a * a - 4 * b * b)))
+    if t1 < 1e-11:
         return 0
 
     return atan((b * sin(t1)) / (a * cos(t1)))
@@ -142,16 +141,16 @@ def f_range(ctx: Context, l: float, r: float) -> list:
     if r - 1e-9 < l:
         return []
 
-    if isInc(helper.g, l):
+    if is_inc(helper.g, l):
         return f_range_inc(ctx, l, r)
     return f_range_dec(ctx, l, r)
 
 
 def f_range_inc(ctx: Context, l, r):
     helper = Helper(ctx)
-    tmax = findMax(helper.g, l, r)
+    tmax = find_max(helper.g, l, r)
 
-    s = [bissecInc(helper.g, l, tmax, 1), bissecDec(helper.g, tmax, r, 1)]
+    s = [bisec_inc(helper.g, l, tmax, 1), bisec_dec(helper.g, tmax, r, 1)]
     ret = []
     for xs in s:
         if fabs(helper.g(xs) - 1) < 1e-9:
@@ -162,8 +161,8 @@ def f_range_inc(ctx: Context, l, r):
 
 def f_range_dec(ctx: Context, l, r):
     helper = Helper(ctx)
-    tmin = findMin(helper.g, l, r)
-    s = [bissecDec(helper.g, l, tmin, 1), bissecInc(helper.g, tmin, r, 1)]
+    tmin = find_min(helper.g, l, r)
+    s = [bisec_dec(helper.g, l, tmin, 1), bisec_inc(helper.g, tmin, r, 1)]
     # print(tmin)
     ret = []
     for xs in s:

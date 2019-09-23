@@ -1,45 +1,61 @@
 from typing import List, Dict
+from sortedcollections import SortedDict
 
 
 class Node:
-    children: Dict
+    children: SortedDict
     leaf: bool
 
     def __init__(self):
-        self.children = dict()
+        self.children = SortedDict()
         self.leaf = True
 
 
 class Tree:
     root: Node
+    wh: List[List[Node]]
+    n: int
 
-    def __init__(self):
+    def __init__(self, n: int):
         self.root = Node()
+        self.wh = [[] for i in range(1+n)]
+        self.n = n
 
-    def add_nodes(self, vlist: List[int]):
+    def add_nodes(self, I: List[int]):
         t = self.root
 
-        vlist.sort()
-
-        for u in vlist:
+        for u in I:
             nxt = t.children.get(u)
 
             if nxt is None:
-                t.children[u] = Node()
+                c_node = Node()
+                self.wh[u].append(c_node)
+                t.children[u] = c_node
+
             t.leaf = False
-            nxt = t.children[u]
-            t = nxt
+            t = t.children[u]
 
-    def has(self, vlist: List[int]):
-        t = self.root
+    def has(self, I: List[int]):
 
-        vlist.sort()
+        for t in self.wh[I[0]]:
+            if self._has(I, t, 1):
+                return True
 
-        for u in vlist:
-            nxt = t.children.get(u)
-            if nxt is None:
+        return False
+
+    def _has(self, I: List[int], t: Node, k: int):
+        if k == len(I):
+            return True
+
+        for u in t.children:
+            if u > I[k]:
                 return False
 
-            t = nxt
+            if u == I[k]:
+                return self._has(I, t.children[u], k+1)
 
-        return True
+            if self._has(I, t.children[u], k):
+                return True
+
+        return False
+

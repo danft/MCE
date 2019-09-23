@@ -9,5 +9,5 @@ setup(
     license='',
     author='danft',
     author_email='',
-    description=''
+    description='', requires=['sortedcollections']
 )

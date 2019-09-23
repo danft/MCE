@@ -1,13 +1,13 @@
 from collections import namedtuple
 
-instance = namedtuple('instance', ['n', 'm', 'X', 'Y', 'a', 'b', 'point_weight', 'ellipse_weight'])
+instance = namedtuple('instance', ['n', 'm', 'X', 'Y', 'a', 'b', 'point_weight', 'ellipse_weight', 'k'])
 
 
 def parse_input(filename: str):
     f = open(filename, 'r')
     m = int(f.readline())
+    k = int(f.readline())
 
-    ellipse = []
     ellipse_weight = []
 
     a = []
@@ -37,8 +37,8 @@ def parse_input(filename: str):
 
     point_weight = []
 
-    for i in range(m):
+    for i in range(n):
         w = float(f.readline())
         point_weight.append(w)
 
-    return instance(n, m, X, Y, a, b, point_weight, ellipse_weight)
+    return instance(n, m, X, Y, a, b, point_weight, ellipse_weight, k)

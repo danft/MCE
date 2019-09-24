@@ -57,14 +57,15 @@ def get_cheb_poly(a: float, b: float, X: List[float], Y:List[float]):
 
     f = np.vectorize(fradius, excluded=[1, 2, 3, 4])
 
-    K = 7
+    K = 1
+    deg = 12
     Dm = pi / K
     ret = []
 
     for i in range(K):
         l = (i) * Dm
         r = (i+1) * Dm
-        ret.append(np.polynomial.chebyshev.Chebyshev.interpolate(f, deg=5, domain=(l, r), args=(a, b, XX, YY)))
+        ret.append(np.polynomial.chebyshev.Chebyshev.interpolate(f, deg=deg, domain=(l, r), args=(a, b, XX, YY)))
 
     return ret
 

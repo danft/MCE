@@ -1,7 +1,7 @@
 from Ellipse import *
 from typing import List, Tuple
 
-from E3PNT.ThreePntEllipse import *
+from E3PNT.e3pnt import *
 from E2PNT.TwoPointEllipse import *
 from Tree import *
 import time
@@ -13,7 +13,7 @@ class Cover:
     cov: List[int]
 
     def __init__(self, ce=Point(0, 0), an=0):
-        self.center = ce
+        self.center = Point(ce[0], ce[1])
         self.angle = an
         self.cov = []
 
@@ -47,7 +47,7 @@ def MCER1(X, Y, e: Ellipse) -> Cover:
     for i in range(n):
         for j in range(i+1, n):
             for k in range(j+1, n):
-                sl = three_point_ellipse(e.a, e.b, X[i], Y[i], X[j], Y[j], X[k], Y[k])
+                sl = e3pnt(e.a, e.b, [X[i], X[j], X[k]], [Y[i],Y[j], Y[k]])
 
                 for s in sl:
                     c = Cover(s[0], s[1])
@@ -112,7 +112,7 @@ def _MCER1(X, Y, e:Ellipse) -> List[Cover]:
                     pr_cov.append(c)
 
             for k in range(j+1, n):
-                sl = three_point_ellipse(e.a, e.b, X[i], Y[i], X[j], Y[j], X[k], Y[k])
+                sl = e3pnt(e.a, e.b, [X[i], X[j], X[k]], [Y[i],Y[j], Y[k]])
 
                 for s in sl:
                     c = Cover(s[0], s[1])

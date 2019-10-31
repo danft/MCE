@@ -1,4 +1,3 @@
-from typing import List
 from utils import distsq, area
 from math import cos, sin
 
@@ -7,8 +6,9 @@ def rot(theta, q, x, y):
     return q * (x * cos(theta) + y * sin(theta)), -x * sin(theta) + y * cos(theta)
 
 
-def fradius(theta: float, a: float, b: float, X: List[float], Y: List[float]):
-    ph = [rot(theta, b/a, X[i], Y[i]) for i in range(3)]
+#@guvectorize([(float64, float64, float64, float64[:], float64[:])], '(),(),(),(n),(n)->()')
+def fradius(theta, a, b, X, Y):
+    ph = [rot(theta, b / a, X[i], Y[i]) for i in range(3)]
 
     PX = [p[0] for p in ph]
     PY = [p[1] for p in ph]
@@ -19,6 +19,4 @@ def fradius(theta: float, a: float, b: float, X: List[float], Y: List[float]):
 
     A = area(PX, PY)
 
-    return b**2*16*A**2 - du*dv*dw
-
-
+    return b ** 2 * 16 * A ** 2 - du * dv * dw

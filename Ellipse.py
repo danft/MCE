@@ -43,8 +43,7 @@ class Ellipse:
         return self.cy + self.b * np.sin(t)
 
     def set_center(self, p: Point):
-        self.cx = p.x
-        self.cy = p.y
+        self.cx, self.cy = p
 
     def set_angle(self, ang: float):
         self.is_rot = abs(ang) > 1e-9

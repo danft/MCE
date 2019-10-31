@@ -3,6 +3,8 @@ from math import sqrt, atan, cos, sin, pi
 from E3PNT.poly_function import *
 from E3PNT.circumradius import *
 from typing import List
+from numba import *
+import time
 
 
 def _ccirc(x1, y1, x2, y2, x3, y3):
@@ -26,11 +28,16 @@ def _tri(theta, q, x, y):
     return (x * cos(-theta) + y * sin(-theta)), -x * sin(-theta) + y * cos(-theta)
 
 
-def _chk(theta, a, b, xc, yc, x, y):
+def eval_ellipse(theta, a, b, xc, yc, x, y):
     X = x - xc
     Y = y - yc
+
     return (X * cos(theta) + Y * sin(theta)) ** 2 / a ** 2 + (
-            X * sin(theta) - Y * cos(theta)) ** 2 / b ** 2 - 1e-9 < 1
+            X * sin(theta) - Y * cos(theta)) ** 2 / b ** 2
+
+
+def _chk(theta, a, b, xc, yc, x, y):
+    return eval_ellipse(theta, a, b, xc, yc, x, y) - 1e-5 < 1
 
 
 def discard(a, b, X, Y):
@@ -51,58 +58,116 @@ def get_input(X, Y):
     return x0, y0, x1, y1, x2, y2
 
 
-def get_cheb_poly(a: float, b: float, X: List[float], Y: List[float]):
-    XX = [X[i] for i in range(3)]
-    YY = [Y[i] for i in range(3)]
+def refine_root(f, cheb_poly, xroot, max_iter):
+    pprime = cheb_poly.deriv()
+
+    for i in range(max_iter):
+        xroot -= cheb_poly(xroot) / pprime(xroot)
+
+    return xroot
+
+
+def get_cheb_poly(a: float, b: float, X: List[float], Y: List[float], deg=12, K=10):
+    XX = [0, X[1]-X[0], X[2]-X[0]]
+    YY = [0, Y[1]-Y[0], Y[2]-Y[0]]
 
     f = np.vectorize(fradius, excluded=[1, 2, 3, 4])
 
-    K = 1
-    deg = 12
     Dm = pi / K
     ret = []
 
     for i in range(K):
-        l = (i) * Dm
+        l = i * Dm
         r = (i + 1) * Dm
         ret.append(np.polynomial.chebyshev.Chebyshev.interpolate(f, deg=deg, domain=(l, r), args=(a, b, XX, YY)))
 
     return ret
 
 
+def angle_error(theta, a, b, X, Y):
+    px1, py1 = _tr(theta, b / a, X[1] - X[0], Y[1] - Y[0])
+    px2, py2 = _tr(theta, b / a, X[2] - X[0], Y[2] - Y[0])
+    (_, _), r = _ccirc(0, 0, px1, py1, px2, py2)
+
+    return abs(r-b)
+
+
+def get_center_from_angle(theta, a, b, X, Y):
+    px1, py1 = _tr(theta, b / a, X[1] - X[0], Y[1] - Y[0])
+    px2, py2 = _tr(theta, b / a, X[2] - X[0], Y[2] - Y[0])
+    (xcc, ycc), r = _ccirc(0, 0, px1, py1, px2, py2)
+
+    xc, yc = _tri(theta, b / a, xcc, ycc)
+
+    return xc + X[0], yc + Y[0]
+
+
 def e3pnt(a: float, b: float, X: List[float], Y: List[float]):
+
+    t1 = time.time()
+    pcoeff = exp_poly_coeff(a, b, X[1]-X[0], X[2]-X[0], Y[1]-Y[0], Y[2]-Y[0])
+
+    print(f'get_coeff_time: {time.time() - t1}')
+
+    t1 = time.time()
+
+    roo = np.roots(pcoeff)
+
+    print(f'troots: {time.time() - t1}')
+
+    roo = np.angle(roo)
+
+    sols = []
+
+    for theta in roo:
+        if theta < 0:
+            continue
+
+        if angle_error(theta, a, b, X, Y) < 1e-13:
+            xc, yc = get_center_from_angle(theta, a, b, X, Y)
+            sols.append((xc, yc, theta))
+
+        #print(f"angle: {theta}, error: {angle_error(theta, a, b, X, Y)}")
+
+    return sols
+
+
+def e3pnt_cheb(a: float, b: float, X: List[float], Y: List[float]):
     if discard(a, b, X, Y):
         return []
 
     x0 = X[0]
     y0 = Y[0]
-
+    X[0] -= x0
+    Y[0] -= y0
     X[1] -= x0
     Y[1] -= y0
     X[2] -= x0
     Y[2] -= y0
 
-    chebps = get_cheb_poly(a, b, X, Y)
+    chebps = get_cheb_poly(a, b, X, Y, deg=32, K=1)
     angles = []
 
     for chebpoly in chebps:
         be = chebpoly.domain[0]
-        en = chebpoly.domain[1]
+        en = chebpoly.domain[-1]
 
-        roo = list(filter(lambda t: np.isreal(t) and be <= t.real <= en, chebpoly.roots()))
-        angles.extend(np.real(roo))
+        roots = chebpoly.roots()
+        roo = []
+        for t in roots:
+            if np.isreal(t) and be <= t.real <= en:
+                roo.append(t.real)
+
+        for r in roo:
+            angles.append(refine_root(lambda tt: fradius(tt, a, b, X, Y), chebpoly, r.real, 0))
 
     ret = []
 
     for theta in angles:
-        px1, py1 = _tr(theta, b / a, X[1], Y[1])
-        px2, py2 = _tr(theta, b / a, X[2], Y[2])
-        (xcc, ycc), r = _ccirc(0, 0, px1, py1, px2, py2)
 
-        xc, yc = _tri(theta, b / a, xcc, ycc)
+        xc, yc = get_center_from_angle(theta, a, b, X, Y)
 
-        if _chk(theta, a, b, xc, yc, X[1], Y[1]) and _chk(theta, a, b, xc, yc, X[2], Y[2]):
-            ret.append(((xc + x0, yc + y0), theta))
+        ret.append((xc + x0, yc + y0, theta))
 
     return ret
 

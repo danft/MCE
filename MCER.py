@@ -1,6 +1,3 @@
-from Ellipse import *
-from typing import List, Tuple
-
 from E3PNT.e3pnt import *
 from E2PNT.TwoPointEllipse import *
 from Tree import *
@@ -11,11 +8,13 @@ class Cover:
     center: Point
     angle: float
     cov: List[int]
+    mask: int
 
     def __init__(self, ce=Point(0, 0), an=0):
         self.center = Point(ce[0], ce[1])
         self.angle = an
         self.cov = []
+        self.mask = 0
 
     def __str__(self):
         return f"({self.center.x}, {self.center.y}) {self.angle}"
@@ -25,6 +24,7 @@ class Cover:
 
     def add_cov(self, u: int):
         self.cov.append(u)
+        self.mask |= 1 << u
 
 
 def eval_cover(X, Y, e:Ellipse, c:Cover):
@@ -33,7 +33,7 @@ def eval_cover(X, Y, e:Ellipse, c:Cover):
     e.set_center(c.center)
 
     for ix in range(len(X)):
-        val += e.f(X[ix], Y[ix]) - 1e-9 < 1
+        val += e.f(X[ix], Y[ix]) - 1e-13 < 1
 
     return val
 
@@ -50,7 +50,7 @@ def MCER1(X, Y, e: Ellipse) -> Cover:
                 sl = e3pnt(e.a, e.b, [X[i], X[j], X[k]], [Y[i],Y[j], Y[k]])
 
                 for s in sl:
-                    c = Cover(s[0], s[1])
+                    c = Cover(Point(s[0], s[1]), s[2])
 
                     val = eval_cover(X, Y, e, c)
 
@@ -87,7 +87,7 @@ def _MCER1(X, Y, e:Ellipse) -> List[Cover]:
         e.set_angle(cc.angle)
 
         for i in range(n):
-            if e.f(X[i], Y[i]) - 1e-9 < 1:
+            if e.f(X[i], Y[i]) - 1e-13 < 1:
                 cc.add_cov(i)
 
     pr_cov = []
@@ -112,10 +112,10 @@ def _MCER1(X, Y, e:Ellipse) -> List[Cover]:
                     pr_cov.append(c)
 
             for k in range(j+1, n):
-                sl = e3pnt(e.a, e.b, [X[i], X[j], X[k]], [Y[i],Y[j], Y[k]])
+                sl = e3pnt(e.a, e.b, [X[i], X[j], X[k]], [Y[i], Y[j], Y[k]])
 
                 for s in sl:
-                    c = Cover(s[0], s[1])
+                    c = Cover(Point(s[0], s[1]), s[2])
                     add_coverage(c)
 
                     if not T.has(c.cov):
@@ -144,6 +144,7 @@ class _MCER:
     curr: List[Cover]
     best_val: float
     best_sol: List[Cover]
+    dp: dict
 
     def __init__(self, X, Y, a, b):
         self.n = len(X)
@@ -162,32 +163,44 @@ class _MCER:
         self.curr = [Cover()] * self.m
         self.best_val = 0
         self.best_sol = [Cover()] * self.m
+        self.nsols_eval = 0
+        self.start_time = 0
 
-    def apply_cover(self, k, c: Cover, mul: int):
+        self.dp = [dict() for i in range(self.m)]
 
-        cn = 0
+    def _f(self, i: int, mask):
 
-        for u in c.cov:
-            cn += self.is_cov[u] == 0
-            self.is_cov[u] += mul
-
-        return cn
-
-    def _f(self, i: int, cnt: int):
         if i == self.m:
+
+            cnt = bin(mask).count('1')
+
             if cnt > self.best_val:
                 self.best_val = cnt
                 self.best_sol = self.curr.copy()
 
+            self.nsols_eval += 1
+            if self.nsols_eval % 10000000 == 0:
+                print(f"[{self.nsols_eval}] - best sol: {self.best_val}, time so far: {time.time() - self.start_time}")
+                print(f"[0]: {len(self.dp[0])}, [1]: {len(self.dp[1])}")
+
             return cnt
+
+        if self.dp[i].get(mask, -1) > 0:
+            #print(f"AAAA: {i, mask}")
+            return self.dp[i].get(mask, -1)
 
         bsol = 0
 
         for c in self.covers[i]:
+
+            if c.mask | mask == mask:
+                continue
+
             self.curr[i] = c
-            tmp = self.apply_cover(i, c, 1)
-            bsol = max(bsol, self._f(i+1, cnt + tmp))
-            self.apply_cover(i, c, -1)
+            bsol = max(bsol, self._f(i+1, mask | c.mask))
+
+        if len(self.dp[i]) < 10000000:
+            self.dp[i][mask] = bsol
 
         return bsol
 
@@ -203,6 +216,7 @@ class _MCER:
         print(f"avg cov. size: {tcov/self.m}")
 
         second_stage = time.time()
+        self.start_time = time.time()
 
         print(f"t1: {second_stage-start_time}")
 
@@ -211,6 +225,8 @@ class _MCER:
         third_stage = time.time()
 
         print(f"t2: {third_stage - start_time}")
+
+        print(f"Size of DP: {len(self.dp)}")
 
         return self.best_val, self.best_sol
 

@@ -105,29 +105,24 @@ def get_center_from_angle(theta, a, b, X, Y):
 def e3pnt(a: float, b: float, X: List[float], Y: List[float]):
 
     t1 = time.time()
-    pcoeff = exp_poly_coeff(a, b, X[1]-X[0], X[2]-X[0], Y[1]-Y[0], Y[2]-Y[0])
+    pcoeff = exp_poly_coeff_t(a, b, X[1]-X[0], X[2]-X[0], Y[1]-Y[0], Y[2]-Y[0])
 
-    print(f'get_coeff_time: {time.time() - t1}')
+    #print(f'get_coeff_time: {time.time() - t1}')
 
     t1 = time.time()
 
     roo = np.roots(pcoeff)
 
-    print(f'troots: {time.time() - t1}')
+    #print(pcoeff)
 
-    roo = np.angle(roo)
+    roo = list(filter(lambda t: abs(np.absolute(t) - 1) < 1e-13, roo))
+    roo = list(map(lambda t: np.angle(t)/2, roo))
 
     sols = []
 
     for theta in roo:
-        if theta < 0:
-            continue
-
-        if angle_error(theta, a, b, X, Y) < 1e-13:
-            xc, yc = get_center_from_angle(theta, a, b, X, Y)
-            sols.append((xc, yc, theta))
-
-        #print(f"angle: {theta}, error: {angle_error(theta, a, b, X, Y)}")
+        xc, yc = get_center_from_angle(theta, a, b, X, Y)
+        sols.append((xc, yc, theta))
 
     return sols
 

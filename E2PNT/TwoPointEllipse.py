@@ -9,7 +9,7 @@ def distsq(X, Y):
     return (X[0]-X[1])**2 + (Y[0]-Y[1])**2
 
 
-def two_point_ellipse(a, b, x1, y1, x2, y2):
+def two_point_ellipse(a, b, x1, y1, x2, y2, do_rot=True):
     X = [x1, x2]
     Y = [y1, y2]
 
@@ -19,8 +19,11 @@ def two_point_ellipse(a, b, x1, y1, x2, y2):
         m = (Y[1] - Y[0]) / (X[1] - X[0])
         theta = atan(m)
 
-    for i in range(len(X)):
-        X[i], Y[i] = rot(X[i], Y[i], -theta)
+    if do_rot:
+        for i in range(len(X)):
+            X[i], Y[i] = rot(X[i], Y[i], -theta)
+    else:
+        theta = 0
 
     m = (Y[1] - Y[0]) / (X[1] - X[0])
     D = distsq(X, Y)

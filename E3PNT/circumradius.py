@@ -2,13 +2,13 @@ from utils import distsq, area
 from math import cos, sin
 
 
-def rot(theta, q, x, y):
+def _tr(theta, q, x, y):
     return q * (x * cos(theta) + y * sin(theta)), -x * sin(theta) + y * cos(theta)
 
 
 #@guvectorize([(float64, float64, float64, float64[:], float64[:])], '(),(),(),(n),(n)->()')
 def fradius(theta, a, b, X, Y):
-    ph = [rot(theta, b / a, X[i], Y[i]) for i in range(3)]
+    ph = [_tr(theta, b / a, X[i], Y[i]) for i in range(3)]
 
     PX = [p[0] for p in ph]
     PY = [p[1] for p in ph]

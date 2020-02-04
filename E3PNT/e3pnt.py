@@ -115,7 +115,7 @@ def e3pnt(a: float, b: float, X: List[float], Y: List[float]):
 
     #print(pcoeff)
 
-    roo = list(filter(lambda t: abs(np.absolute(t) - 1) < 1e-13, roo))
+    roo = list(filter(lambda t: abs(np.absolute(t) - 1) < 1e-7, roo))
     roo = list(map(lambda t: np.angle(t)/2, roo))
 
     sols = []

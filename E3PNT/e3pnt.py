@@ -58,11 +58,11 @@ def get_input(X, Y):
     return x0, y0, x1, y1, x2, y2
 
 
-def refine_root(f, cheb_poly, xroot, max_iter):
-    pprime = cheb_poly.deriv()
+def refine_root(poly, xroot, max_iter):
+    pprime = poly.deriv()
 
     for i in range(max_iter):
-        xroot -= cheb_poly(xroot) / pprime(xroot)
+        xroot -= poly(xroot) / pprime(xroot)
 
     return xroot
 
@@ -89,7 +89,22 @@ def angle_error(theta, a, b, X, Y):
     px2, py2 = _tr(theta, b / a, X[2] - X[0], Y[2] - Y[0])
     (_, _), r = _ccirc(0, 0, px1, py1, px2, py2)
 
+    #return np.abs(fradius(theta, a, b, [0, X[1]-X[0], X[2]-X[0]], [0, Y[1]-Y[0], Y[2]-Y[0]]))
+
     return abs(r-b)
+
+def sol_error(a, b, theta, xc, yc, X, Y):
+
+    error = []
+    for i in range(len(X)):
+        x, y = X[i], Y[i]
+        err = eval_ellipse(theta, a, b, xc, yc, x, y)
+
+        error.append(np.abs(err-1))
+
+    return np.mean(error)
+
+
 
 
 def get_center_from_angle(theta, a, b, X, Y):
@@ -102,10 +117,17 @@ def get_center_from_angle(theta, a, b, X, Y):
     return xc + X[0], yc + Y[0]
 
 
-def e3pnt(a: float, b: float, X: List[float], Y: List[float]):
+def e3pnt(a: float, b: float, X: List[float], Y: List[float], refine_roots = False, return_error = False):
 
     t1 = time.time()
     pcoeff = exp_poly_coeff_t(a, b, X[1]-X[0], X[2]-X[0], Y[1]-Y[0], Y[2]-Y[0])
+
+    cc = pcoeff[0]
+
+    for i in range(len(pcoeff)):
+        pcoeff[i] /= cc
+
+    pol = np.poly1d(pcoeff)
 
     #print(f'get_coeff_time: {time.time() - t1}')
 
@@ -115,14 +137,25 @@ def e3pnt(a: float, b: float, X: List[float], Y: List[float]):
 
     #print(pcoeff)
 
-    roo = list(filter(lambda t: abs(np.absolute(t) - 1) < 1e-7, roo))
-    roo = list(map(lambda t: np.angle(t)/2, roo))
+    roo = list(filter(lambda t: abs(np.absolute(t) - 1) < 1e-2, roo))
+
+    error = []
+    for r in roo:
+        error.append(np.abs(pol(r)))
+
+    if refine_roots:
+        roo = list(map(lambda t: refine_root(pol, t, 3), roo))
 
     sols = []
 
-    for theta in roo:
+    for r in roo:
+        theta = np.angle(r)/2
         xc, yc = get_center_from_angle(theta, a, b, X, Y)
-        sols.append((xc, yc, theta))
+        if not return_error:
+            sols.append((xc, yc, theta))
+        else:
+            sols.append((xc, yc, theta, abs(np.absolute(r)-1)))
+
 
     return sols
 
@@ -154,7 +187,7 @@ def e3pnt_cheb(a: float, b: float, X: List[float], Y: List[float]):
                 roo.append(t.real)
 
         for r in roo:
-            angles.append(refine_root(lambda tt: fradius(tt, a, b, X, Y), chebpoly, r.real, 0))
+            angles.append(refine_root(chebpoly, r.real, 0))
 
     ret = []
 

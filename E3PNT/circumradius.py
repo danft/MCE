@@ -6,7 +6,6 @@ def _tr(theta, q, x, y):
     return q * (x * cos(theta) + y * sin(theta)), -x * sin(theta) + y * cos(theta)
 
 
-#@guvectorize([(float64, float64, float64, float64[:], float64[:])], '(),(),(),(n),(n)->()')
 def fradius(theta, a, b, X, Y):
     ph = [_tr(theta, b / a, X[i], Y[i]) for i in range(3)]
 
